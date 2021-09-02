@@ -840,7 +840,7 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 		}
 		else
 		{
-			for (double p = 0; p <= 1; p+=0.05)
+			for (double p = 0.0; p <= 1.001; p+=0.05)
 			{
 				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, &pThis->m_wndTrainView);
 				pThis->m_net._caculate_sw_clustering_coefficient();

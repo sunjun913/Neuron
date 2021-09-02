@@ -405,12 +405,12 @@ void CNeuronHopfieldNetwrok::_caculate_sw_average_path_length()
 	  {
 		  if (x > y)
 		  {
-			  LengthTotal = LengthTotal + _find_length(x, y);
+			  LengthTotal = LengthTotal + (_find_length(x, y)*1.0);
 		  }
 	  }
 	}
 
-	_sw_average_path_length = (2*LengthTotal) / (_s_net.num_neurons * (_s_net.num_neurons-1));
+	_sw_average_path_length = (2.0*LengthTotal) / (_s_net.num_neurons * (_s_net.num_neurons-1));
 }
 
 int CNeuronHopfieldNetwrok::_find_length(const int iNeuron, const int jNeuron)
@@ -420,14 +420,14 @@ int CNeuronHopfieldNetwrok::_find_length(const int iNeuron, const int jNeuron)
 
 	for (int a = 0; a < _s_net.num_neurons; a++)
 	{
-		if (a == iNeuron)
-		{
-			lenMatrix[a] = 0;
-		}
-		else
-		{
-			lenMatrix[a] = inf;
-		}
+if (a == iNeuron)
+{
+	lenMatrix[a] = 0;
+}
+else
+{
+	lenMatrix[a] = inf;
+}
 	}
 
 	CArray<int, int> arr;
@@ -436,11 +436,11 @@ int CNeuronHopfieldNetwrok::_find_length(const int iNeuron, const int jNeuron)
 	{
 		int val = _s_net.links[iNeuron][k];
 		lenMatrix[val] = iLength;
-		_add2array(&arr,val);
+		_add2array(&arr, val);
 	}
 
 	//Breadth first search
-	while(_is_inf(lenMatrix,jNeuron))
+	while (_is_inf(lenMatrix, jNeuron))
 	{
 		iLength++;
 		CArray<int, int> tmp;
@@ -451,9 +451,9 @@ int CNeuronHopfieldNetwrok::_find_length(const int iNeuron, const int jNeuron)
 				int val = _s_net.links[arr.GetAt(x)][y];
 				if (lenMatrix[val] == inf)
 				{
-				   lenMatrix[val] = iLength;
+					lenMatrix[val] = iLength;
 				}
-				_add2array(&tmp,val);
+				_add2array(&tmp, val);
 			}
 		}
 		arr.RemoveAll();
@@ -468,9 +468,9 @@ bool CNeuronHopfieldNetwrok::_is_inf(int* lMatrix, const int jNeuron)
 {
 	bool result = false;
 
-	if(lMatrix[jNeuron] == inf)
+	if (lMatrix[jNeuron] == inf)
 	{
-	  result = true;
+		result = true;
 	}
 
 	return result;
@@ -490,12 +490,12 @@ void CNeuronHopfieldNetwrok::_add2array(CArray<int, int>* pArray, const int val)
 
 void CNeuronHopfieldNetwrok::_caculate_sw_clustering_coefficient()
 {
-	double Ck = 0;
+	double Ck = 0.0;
 	for (int i = 0; i < _s_net.num_neurons; i++)
 	{
-		Ck = Ck + _find_sw_clustering_coefficient(i);
+		Ck = Ck + (_find_sw_clustering_coefficient(i)*1.0);
 	}
-	_sw_clustering_coefficient = Ck/_s_net.num_neurons;
+	_sw_clustering_coefficient = Ck / _s_net.num_neurons;
 }
 
 double CNeuronHopfieldNetwrok::_find_sw_clustering_coefficient(const UINT nNeuron)
@@ -503,29 +503,33 @@ double CNeuronHopfieldNetwrok::_find_sw_clustering_coefficient(const UINT nNeuro
 	double Ck = 0;
 	int num = nNeuron;
 	int iNumOfWiresBetweenNeigbours = 0;
-	CArray<int,int> arr;
+	CArray<int, int> arr;
 
 	for (int i = 0; i < _s_net.k_neurons; i++)
 	{
 		//find all neigbours of nNeuron
-		_add2array(&arr, _s_net.links[num][i]);
-	}
-
-	//find actual wires between neigbours.
-	for(int x =0; x<arr.GetCount();x++)
-	{
-		for (int y = 0; y < _s_net.k_neurons; y++)
+		if (num != _s_net.links[num][i])
 		{
-
-				if (_find_wire_between_neigbours(&arr, _s_net.links[arr.GetAt(x)][y]))
-				{
-					iNumOfWiresBetweenNeigbours++;
-				}
-
+			_add2array(&arr, _s_net.links[num][i]);
 		}
 	}
 
-	Ck =   (2*iNumOfWiresBetweenNeigbours) / (_s_net.k_neurons * (_s_net.k_neurons - 1));
+	//find actual wires between neigbours.
+	for (int x = 0; x < arr.GetCount(); x++)
+	{
+		for (int y = 0; y < _s_net.k_neurons; y++)
+		{
+			if (arr.GetAt(x) < _s_net.links[arr.GetAt(x)][y])
+			{
+			   if (_find_wire_between_neigbours(&arr, _s_net.links[arr.GetAt(x)][y]))
+			   {
+				 iNumOfWiresBetweenNeigbours++;
+			   }
+			}     		
+		}
+	}
+
+	Ck = ((2.0*iNumOfWiresBetweenNeigbours) / (_s_net.k_neurons * (_s_net.k_neurons-1)));
 
 	return Ck;
 }
