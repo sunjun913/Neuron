@@ -24,7 +24,6 @@ typedef struct smallworld_hopfield_net {
 
 static hopfield_net _net;
 static smallworld_hopfield_net _s_net;
-static CArray<int, int> freinds_ref_array;
 
 class CNeuronHopfieldNetwrok
 {
@@ -46,7 +45,7 @@ public:
 	void _heibian_method_smallworld();
 	void _wan_abdullah_method();
 	void _wan_abdullah_method_smallworld();
-
+	
 	void _update_state(const UINT nMethod,const UINT nNeuron);
 	void _signum(const UINT nMethod,const UINT nNeuron);
 	scalar* _get_current_pattern() { return _cur_pattern; }
@@ -56,7 +55,7 @@ public:
 
 	void _caculate_sw_clustering_coefficient();
 	double _find_sw_clustering_coefficient(const UINT nNeuron);
-	bool _find_wire_between_neigbours(CArray<int, int>* pArray, const int val);
+	int _find_wires_between_neigbours(CArray<int, int>* pArray, const int val);
 
 	void _caculate_sw_average_path_length();
 	int _find_length(const int iNeuron, const int jNeuron);

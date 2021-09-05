@@ -107,7 +107,13 @@ bool CNeuronHopfieldNetwrok::_allocate_smallworld_network(const int num_neurons,
 			{
 				if (random_p < _s_net.p_rewire)
 				{
-					_s_net.links[i][j] = cvRandInt(&rng) % _s_net.num_neurons;
+					int rnd_neuron = cvRandInt(&rng) % _s_net.num_neurons;
+					while (rnd_neuron == val || rnd_neuron == i)
+					{
+						// in case non rewire and self wire.
+						rnd_neuron = cvRandInt(&rng) % _s_net.num_neurons;
+					}
+					_s_net.links[i][j] = rnd_neuron;
 				}
 			}
 
@@ -493,7 +499,7 @@ void CNeuronHopfieldNetwrok::_caculate_sw_clustering_coefficient()
 	double Ck = 0.0;
 	for (int i = 0; i < _s_net.num_neurons; i++)
 	{
-		Ck = Ck + (_find_sw_clustering_coefficient(i)*1.0);
+		Ck = Ck + _find_sw_clustering_coefficient(i);
 	}
 	_sw_clustering_coefficient = Ck / _s_net.num_neurons;
 }
@@ -505,49 +511,66 @@ double CNeuronHopfieldNetwrok::_find_sw_clustering_coefficient(const UINT nNeuro
 	int iNumOfWiresBetweenNeigbours = 0;
 	CArray<int, int> arr;
 
-	for (int i = 0; i < _s_net.k_neurons; i++)
+	//find all neigbours of nNeuron
+	for (int i = 0; i < _s_net.num_neurons; i++)
 	{
-		//find all neigbours of nNeuron
-		if (num != _s_net.links[num][i])
+		for (int j = 0; j < _s_net.k_neurons; j++)
 		{
-			_add2array(&arr, _s_net.links[num][i]);
+			if (i == num)
+			{
+				_add2array(&arr, _s_net.links[num][j]);
+			}
+			else if(_s_net.links[i][j] == num)
+			{
+				_add2array(&arr, i);
+			}
 		}
 	}
 
 	//find actual wires between neigbours.
-	for (int x = 0; x < arr.GetCount(); x++)
+	while(arr.GetCount()>0)
 	{
-		for (int y = 0; y < _s_net.k_neurons; y++)
-		{
-			if (arr.GetAt(x) < _s_net.links[arr.GetAt(x)][y])
-			{
-			   if (_find_wire_between_neigbours(&arr, _s_net.links[arr.GetAt(x)][y]))
-			   {
-				 iNumOfWiresBetweenNeigbours++;
-			   }
-			}     		
-		}
+		iNumOfWiresBetweenNeigbours += _find_wires_between_neigbours(&arr, arr.GetAt(0));
+		arr.RemoveAt(0);
 	}
 
-	Ck = ((2.0*iNumOfWiresBetweenNeigbours) / (_s_net.k_neurons * (_s_net.k_neurons-1)));
+	Ck = (2.0 * iNumOfWiresBetweenNeigbours) / (_s_net.num_neurons * (_s_net.num_neurons -1));
 
 	return Ck;
 }
 
-bool CNeuronHopfieldNetwrok::_find_wire_between_neigbours(CArray<int, int>* pArray, const int val)
+int CNeuronHopfieldNetwrok::_find_wires_between_neigbours(CArray<int, int>* pArray, const int val)
 {
-	bool result = false;
+	int wires = 0;
 
-	for (int i = 0; i < pArray->GetCount(); i++)
+	for (int i = 1; i < pArray->GetCount(); i++)
 	{
-		if (val == pArray->GetAt(i))
+		int wires_val = 0;
+		for (int j = 0; j < _s_net.k_neurons; j++)
 		{
-			result = true;
-			return result;
+			// check if i of arr is listed in val's neigbours.
+			if (_s_net.links[val][j] == pArray->GetAt(i))
+			{
+				wires_val = 1;
+				continue;
+			}
 		}
+
+		if (wires_val == 0)
+		{
+			// check if val is listed in i's neigbours.
+			for (int k = 0; k < _s_net.k_neurons; k++)
+			{
+				if (_s_net.links[i][k] == val)
+				{
+					wires_val = 1;
+				}
+			}
+		}
+		wires = wires + wires_val;
 	}
 
-	return result;
+	return wires;
 }
 
 
