@@ -63,7 +63,7 @@ bool CNeuronHopfieldNetwrok::_allocate_network(const int num_neurons, scalar** p
 	 
 }
 
-bool CNeuronHopfieldNetwrok::_allocate_smallworld_network(const int num_neurons, scalar** patterns, const int num_patterns, const int k_neurons, double probability_rewire, CWnd* pMsgInterface)
+bool CNeuronHopfieldNetwrok::_allocate_smallworld_network(const int num_neurons, scalar** patterns, const int num_patterns, const int k_neurons, double probability_rewire, const bool bMutualAnalysis, CWnd* pMsgInterface)
 {
 	_nTopology = 1;
 	_patterns = patterns;
@@ -87,6 +87,13 @@ bool CNeuronHopfieldNetwrok::_allocate_smallworld_network(const int num_neurons,
 		_s_net.weights[p] = (scalar *)malloc(sizeof(scalar) * _s_net.k_neurons);
 	}
 
+	if (bMutualAnalysis == true)
+	{
+		_mi.p0_arr.RemoveAll();
+		_mi.p1_arr.RemoveAll();
+		_mutual_analysis(_patterns, _num_patterns);
+	}
+
 	int val;
 	for (int i = 0; i < _s_net.num_neurons; i++)
 	{
@@ -107,13 +114,30 @@ bool CNeuronHopfieldNetwrok::_allocate_smallworld_network(const int num_neurons,
 			{
 				if (random_p < _s_net.p_rewire)
 				{
-					int rnd_neuron = cvRandInt(&rng) % _s_net.num_neurons;
-					while (rnd_neuron == val || rnd_neuron == i)
+					if (bMutualAnalysis == false)
 					{
-						// in case non rewire and self wire.
-						rnd_neuron = cvRandInt(&rng) % _s_net.num_neurons;
+						int rnd_neuron = cvRandInt(&rng) % _s_net.num_neurons;
+						while (rnd_neuron == val || rnd_neuron == i)
+						{
+							// in case non rewire and self wire.
+							rnd_neuron = cvRandInt(&rng) % _s_net.num_neurons;
+						}
+						_s_net.links[i][j] = rnd_neuron;
 					}
-					_s_net.links[i][j] = rnd_neuron;
+					else
+					{
+						int rnd_neuron;
+						if (_patterns[0][i] == 0)
+						{
+							rnd_neuron = cvRandInt(&rng) % _mi.p1_arr.GetCount();
+							_s_net.links[i][j] = _mi.p1_arr.GetAt(rnd_neuron);
+						}
+						else if(_patterns[0][i] == 1)
+						{
+							rnd_neuron = cvRandInt(&rng) % _mi.p0_arr.GetCount();
+							_s_net.links[i][j] = _mi.p0_arr.GetAt(rnd_neuron);
+						}
+					}
 				}
 			}
 
@@ -276,7 +300,7 @@ void CNeuronHopfieldNetwrok::_wan_abdullah_method_smallworld()
 					}
 					else
 					{
-						weight_ij = weight_ij + temp * (-1);
+						weight_ij = weight_ij + temp * (-1.0);
 					}
 				}
 			}
@@ -314,10 +338,21 @@ void CNeuronHopfieldNetwrok::_signum(const UINT nMethod,const UINT nNeuron)
 		}
 		break;
 	  case 1: //small world connected
-		for (int i = 0; i < _s_net.k_neurons; i++)
-		{
-			int x = _s_net.links[nNeuron][i];
-			neuron_update += (_cur_pattern[x])*(_s_net.weights[nNeuron][i]);
+		for (int i = 0; i < _s_net.num_neurons; i++)
+	    {
+		   for (int j = 0; j < _s_net.k_neurons; j++)
+		   {
+			  if (i == nNeuron)
+			  {
+				  int x = _s_net.links[nNeuron][j];
+				  neuron_update += (_cur_pattern[x]) * (_s_net.weights[nNeuron][j]);
+			  }
+			  else if (_s_net.links[i][j] == nNeuron)
+			  {
+				  int y = _s_net.links[i][j];
+				  neuron_update += (_cur_pattern[i]) * (_s_net.weights[i][j]);
+			  }
+		   }
 		}
 		break;
 	}
@@ -333,7 +368,7 @@ void CNeuronHopfieldNetwrok::_train_network(const int iWeightMethod)
 	}
 	_continue_train = true;
 	_weight_method = iWeightMethod;
-	scalar old_neuron_state;
+	scalar prev_neuron_state;
 
 	while (_continue_train)
 	{
@@ -341,9 +376,9 @@ void CNeuronHopfieldNetwrok::_train_network(const int iWeightMethod)
 		
 		for (int i = 0; i < _net.num_neurons; i++)
 		{
-			old_neuron_state = _cur_pattern[i];
+			prev_neuron_state = _cur_pattern[i];
 			_update_state(0, i);
-			if (_cur_pattern[i] == old_neuron_state)
+			if (_cur_pattern[i] == prev_neuron_state)
 			{
 				_continue_train = false;
 			}
@@ -373,16 +408,16 @@ void CNeuronHopfieldNetwrok::_train_smallworld_netwrok(const int iWeightMethod)
 	}
 	_continue_train = true;
 	_weight_method = iWeightMethod + 2;
-	scalar old_neuron_state;
+	scalar prev_neuron_state;
 
 	while (_continue_train)
 	{
 		_update_weight(_weight_method);
 		for (int i = 0; i < _s_net.num_neurons; i++)
 		{
-			old_neuron_state = _cur_pattern[i];
+			prev_neuron_state = _cur_pattern[i];
 			_update_state(1, i);
-			if (_cur_pattern[i] == old_neuron_state)
+			if (_cur_pattern[i] == prev_neuron_state)
 			{
 				_continue_train = false;
 			}
@@ -426,14 +461,14 @@ int CNeuronHopfieldNetwrok::_find_length(const int iNeuron, const int jNeuron)
 
 	for (int a = 0; a < _s_net.num_neurons; a++)
 	{
-if (a == iNeuron)
-{
-	lenMatrix[a] = 0;
-}
-else
-{
-	lenMatrix[a] = inf;
-}
+      if (a == iNeuron)
+      {
+	    lenMatrix[a] = 0;
+      }
+      else
+      {
+	    lenMatrix[a] = inf;
+      }
 	}
 
 	CArray<int, int> arr;
@@ -527,6 +562,7 @@ double CNeuronHopfieldNetwrok::_find_sw_clustering_coefficient(const UINT nNeuro
 		}
 	}
 
+	int n = (int)arr.GetCount();
 	//find actual wires between neigbours.
 	while(arr.GetCount()>0)
 	{
@@ -534,7 +570,7 @@ double CNeuronHopfieldNetwrok::_find_sw_clustering_coefficient(const UINT nNeuro
 		arr.RemoveAt(0);
 	}
 
-	Ck = (2.0 * iNumOfWiresBetweenNeigbours) / (_s_net.num_neurons * (_s_net.num_neurons -1));
+	Ck = (2.0 * iNumOfWiresBetweenNeigbours) / (n * (n - 1));
 
 	return Ck;
 }
@@ -543,35 +579,55 @@ int CNeuronHopfieldNetwrok::_find_wires_between_neigbours(CArray<int, int>* pArr
 {
 	int wires = 0;
 
-	for (int i = 1; i < pArray->GetCount(); i++)
+	for (int i = 0; i < pArray->GetCount(); i++)
 	{
-		int wires_val = 0;
-		for (int j = 0; j < _s_net.k_neurons; j++)
+		if (val != pArray->GetAt(i))
 		{
-			// check if i of arr is listed in val's neigbours.
-			if (_s_net.links[val][j] == pArray->GetAt(i))
+			int wires_val = 0;
+			for (int j = 0; j < _s_net.k_neurons; j++)
 			{
-				wires_val = 1;
-				continue;
-			}
-		}
-
-		if (wires_val == 0)
-		{
-			// check if val is listed in i's neigbours.
-			for (int k = 0; k < _s_net.k_neurons; k++)
-			{
-				if (_s_net.links[i][k] == val)
+				// check if i of arr is listed in val's neigbours.
+				if (_s_net.links[val][j] == pArray->GetAt(i))
 				{
 					wires_val = 1;
+					break;
 				}
 			}
+
+			if (wires_val == 0)
+			{
+				// check if val is listed in i's neigbours.
+				for (int k = 0; k < _s_net.k_neurons; k++)
+				{
+					if (_s_net.links[i][k] == val)
+					{
+						wires_val = 1;
+						break;
+					}
+				}
+			}
+			wires = wires + wires_val;
 		}
-		wires = wires + wires_val;
 	}
 
 	return wires;
 }
 
+void CNeuronHopfieldNetwrok::_mutual_analysis(scalar** patterns, const int num_patterns)
+{
+	int x = 0;
+	int cnt_0 = 0, cnt_1 =0;
+	for (int y = 0; y < _s_net.num_neurons; y++)
+	{
+		if (patterns[x][y] == 0)
+		{
+			_mi.p0_arr.Add(y);
+		}
+		else if (patterns[x][y] == 1)
+		{
+			_mi.p1_arr.Add(y);
+		}
+	}
+}
 
 

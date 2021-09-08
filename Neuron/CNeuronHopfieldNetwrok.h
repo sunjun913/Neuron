@@ -22,8 +22,14 @@ typedef struct smallworld_hopfield_net {
 	scalar** weights;	
 } smallworld_hopfield_net;
 
+typedef struct mutual_information {
+	CArray<int, int> p0_arr;
+	CArray<int, int> p1_arr;	
+} mutual_information;
+
 static hopfield_net _net;
 static smallworld_hopfield_net _s_net;
+static mutual_information _mi;
 
 class CNeuronHopfieldNetwrok
 {
@@ -34,7 +40,7 @@ public:
 	bool _allocate_network(const int num_neurons,scalar** patterns, const int num_patterns, CWnd* pMsgInterface);
 	void _free_netwrok();
 
-	bool _allocate_smallworld_network(const int num_neurons, scalar** patterns, const int num_patterns,const int k_neurons,double probability_rewire, CWnd* pMsgInterface);
+	bool _allocate_smallworld_network(const int num_neurons, scalar** patterns, const int num_patterns,const int k_neurons,double probability_rewire,const bool bMutualAnalysis, CWnd* pMsgInterface);
 	void _free_smallworld_network();
 
 	void _train_network(const int iWeightMethod);
@@ -61,6 +67,8 @@ public:
 	int _find_length(const int iNeuron, const int jNeuron);
 	bool _is_inf(int* lMatrix, const int jNeuron);
 	void _add2array(CArray<int, int>* pArray, const int val);
+
+	void _mutual_analysis(scalar** patterns,const int num_patterns);
 
 private:
 	scalar**     _patterns;

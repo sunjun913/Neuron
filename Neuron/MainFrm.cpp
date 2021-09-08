@@ -53,8 +53,7 @@ CMainFrame::CMainFrame() noexcept
 
 CMainFrame::~CMainFrame()
 {
-	//m_net._free_netwrok();
-	m_net._free_smallworld_network();
+
 }
 
 int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -492,12 +491,23 @@ void CMainFrame::OnTrainStartstoring()
 		return;
 	}
 
+	if (m_wndTrainConfView.getTopology() == 1)
+	{
+		m_net._free_smallworld_network();
+	}
+	else
+	{
+		m_net._free_netwrok();
+	}
+
 	m_hThread = CreateThread(NULL, 0,
 		(LPTHREAD_START_ROUTINE)TrainNetworkThread,
 		this,
 		0,
 		&m_dwThreadID);
 
+	CloseHandle(m_hThread);
+	Sleep(0);
 }
 
 void CMainFrame::OnTrainStartretrieval()
@@ -645,16 +655,14 @@ UINT WINAPI CMainFrame::TrainNetworkThread(LPVOID pParam)
 
 	if (pThis->m_wndTrainConfView.getTopology() == 1)
 	{
-		pThis->m_net._free_smallworld_network();
 		double dRewireProbability = pThis->m_wndTrainConfView.getRewireProbability();
 		int iKneurons = pThis->m_wndTrainConfView.getKneuron();
 		pThis->m_wndTrainView.SetKneuron(pThis->m_wndTrainConfView.getKneuron());
-		pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView,iKneurons,dRewireProbability, &pThis->m_wndTrainView);
+		pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView,iKneurons,dRewireProbability,bMutualAnalysis,&pThis->m_wndTrainView);
 		pThis->m_net._train_smallworld_netwrok(iWeightMethod);
 	}
 	else
 	{
-		pThis->m_net._free_netwrok();
 		if (!pThis->m_net._allocate_network(iNeurons, _patterns, iNumberOfTrainBwView, &pThis->m_wndTrainView))
 		{
 			return 0;
@@ -778,6 +786,8 @@ void CMainFrame::OnEvaluationPKcLen()
 		0,
 		&m_dwThreadID);
 
+	CloseHandle(m_hThread);
+	Sleep(0);
 }
 
 UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(LPVOID pParam)
@@ -790,6 +800,7 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 	POSITION pos = pThis->m_viewList.GetHeadPosition();
 	CObject* pObject = NULL;
 	CNeuronBwImgView* pBwImgView = NULL;
+	bool bMutualAnalysis = pThis->m_wndTrainConfView.getMutualAnalysis();
 
 	while (pos != NULL)
 	{
@@ -842,7 +853,7 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 		{
 			for (double p = 0.0; p <= 1.001; p+=0.05)
 			{
-				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, &pThis->m_wndTrainView);
+				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, bMutualAnalysis,&pThis->m_wndTrainView);
 				pThis->m_net._caculate_sw_clustering_coefficient();
 				pThis->m_net._caculate_sw_average_path_length();
 
