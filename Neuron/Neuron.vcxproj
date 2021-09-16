@@ -132,7 +132,7 @@
     <ClInclude Include="ChildView.h" />
     <ClInclude Include="CNeuronBwImgView.h" />
     <ClInclude Include="CNeuronGrayImgView.h" />
-    <ClInclude Include="CNeuronHopfieldNetwrok.h" />
+    <ClInclude Include="CNeuronHopfieldNetwork.h" />
     <ClInclude Include="CNeuronImageView.h" />
     <ClInclude Include="CNeuronOpenCVImageCtrl.h" />
     <ClInclude Include="CNeuronRetrievalView.h" />
@@ -150,7 +150,7 @@
     <ClCompile Include="ChildView.cpp" />
     <ClCompile Include="CNeuronBwImgView.cpp" />
     <ClCompile Include="CNeuronGrayImgView.cpp" />
-    <ClCompile Include="CNeuronHopfieldNetwrok.cpp" />
+    <ClCompile Include="CNeuronHopfieldNetwork.cpp" />
     <ClCompile Include="CNeuronImageView.cpp" />
     <ClCompile Include="CNeuronOpenCVImageCtrl.cpp" />
     <ClCompile Include="CNeuronRetrievalView.cpp" />

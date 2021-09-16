@@ -31,11 +31,11 @@ static hopfield_net _net;
 static smallworld_hopfield_net _s_net;
 static mutual_information _mi;
 
-class CNeuronHopfieldNetwrok
+class CNeuronHopfieldNetwork
 {
 public:
-	CNeuronHopfieldNetwrok();
-	~CNeuronHopfieldNetwrok();
+	CNeuronHopfieldNetwork();
+	~CNeuronHopfieldNetwork();
 	
 	bool _allocate_network(const int num_neurons,scalar** patterns, const int num_patterns, CWnd* pMsgInterface);
 	void _free_netwrok();
@@ -69,6 +69,8 @@ public:
 	void _add2array(CArray<int, int>* pArray, const int val);
 
 	void _mutual_analysis(scalar** patterns,const int num_patterns);
+
+	double _caculate_sw_similarity();
 
 private:
 	scalar**     _patterns;

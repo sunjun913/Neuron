@@ -38,6 +38,7 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWndEx)
 	ON_COMMAND(ID_TRAIN, &CMainFrame::OnTrain)
 	ON_MESSAGE(WM_TRAINVIEW_SHOW, &CMainFrame::OnTrainViewShow)
 	ON_COMMAND(ID_EVALUATION_P_KC_LEN, &CMainFrame::OnEvaluationPKcLen)
+	ON_COMMAND(ID_EVALUATIONS_SIMILARITY, &CMainFrame::OnEvaluationsSimilarityPK)
 END_MESSAGE_MAP()
 
 // CMainFrame construction/destruction
@@ -265,6 +266,140 @@ BOOL CMainFrame::LoadFrame(UINT nIDResource, DWORD dwDefaultStyle, CWnd* pParent
 	}
 
 	return TRUE;
+}
+
+BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pWnd)
+{
+	// TODO: Add your specialized code here and/or call the base class
+	CNeuronImageView*   pImgView = NULL;
+	CNeuronGrayImgView* pGrayImgView = NULL;
+	CNeuronBwImgView*   pBwImgView = NULL;
+
+	if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronImageView)))
+	{
+		pImgView = (CNeuronImageView*)pWnd;
+		RemoveViewFromList(pImgView, &m_viewList);
+	}
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronGrayImgView)))
+	{
+		pGrayImgView = (CNeuronGrayImgView*)pWnd;
+		RemovePathFromList(pGrayImgView->GetImagePath(), &m_grayImgList);
+		RemoveViewFromList(pGrayImgView, &m_viewList);
+	}
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
+	{
+		pBwImgView = (CNeuronBwImgView*)pWnd;
+		RemovePathFromList(pBwImgView->GetImagePath(), &m_bwImgList);
+		RemoveViewFromList(pBwImgView, &m_viewList);
+	}
+
+
+	if (pWnd->IsKindOf(RUNTIME_CLASS(CTabbedPane)))
+	{
+		CTabbedPane* tabpane = (CTabbedPane *)pWnd;
+
+		CMFCBaseTabCtrl* pTabWnd = tabpane->GetUnderlyingWindow();
+		int num = pTabWnd->GetActiveTab();
+
+		if (num >= 0)
+		{
+			CDockablePane* pBar = DYNAMIC_DOWNCAST(CDockablePane, pTabWnd->GetTabWnd(num));
+			if (pBar != NULL)
+			{
+				ASSERT_VALID(pBar);
+				::PostMessageA(pBar->m_hWnd, WM_CLOSE, 0, 0);
+			}
+		}
+	}
+	else
+	{
+		CDockablePane* pane = (CDockablePane*)pWnd;
+		if (pane->IsKindOf(RUNTIME_CLASS(CDockablePane)) || pane->IsKindOf(RUNTIME_CLASS(CPane)) && !pane->IsKindOf(RUNTIME_CLASS(CMFCToolBar)))
+		{
+			::PostMessageA(pane->m_hWnd, WM_CLOSE, 0, 0);
+		}
+	}
+
+	return TRUE;
+	//return CFrameWndEx::OnCloseDockingPane(pWnd);
+}
+
+BOOL CMainFrame::OnCloseMiniFrame(CPaneFrameWnd* pWnd)
+{
+	// TODO: Add your specialized code here and/or call the base class
+	
+	CNeuronImageView*   pImgView = NULL;
+	CNeuronGrayImgView* pGrayImgView = NULL;
+	CNeuronBwImgView*   pBwImgView = NULL;
+
+	if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronImageView)))
+	{
+		pImgView = (CNeuronImageView*)pWnd;
+		RemoveViewFromList(pImgView, &m_viewList);
+	}
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronGrayImgView)))
+	{
+		pGrayImgView = (CNeuronGrayImgView*)pWnd;
+		RemovePathFromList(pGrayImgView->GetImagePath(), &m_grayImgList);
+		RemoveViewFromList(pGrayImgView, &m_viewList);
+	}
+	else if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
+	{
+		pBwImgView = (CNeuronBwImgView*)pWnd;
+		RemovePathFromList(pBwImgView->GetImagePath(), &m_bwImgList);
+		RemoveViewFromList(pBwImgView, &m_viewList);
+	}
+	
+	CWnd* pwnd = pWnd->GetPane();
+	if (pwnd->IsKindOf(RUNTIME_CLASS(CTabbedPane)))
+	{
+		CTabbedPane* tabpane = (CTabbedPane *)pwnd;
+
+		CMFCBaseTabCtrl* pTabWnd = tabpane->GetUnderlyingWindow();
+
+		for (int i = 0; i < pTabWnd->GetTabsNum(); i++)
+		{
+			CDockablePane* pBar = DYNAMIC_DOWNCAST(CDockablePane, pTabWnd->GetTabWnd(i));
+			if (pBar != NULL)
+			{
+				ASSERT_VALID(pBar);
+				::PostMessageA(pBar->m_hWnd, WM_CLOSE, 0, 0);
+			}
+		}
+	}
+	else
+	{
+		CDockablePane* pane = (CDockablePane *)pwnd;
+		if (pane->IsKindOf(RUNTIME_CLASS(CDockablePane)) || pane->IsKindOf(RUNTIME_CLASS(CPane)) && pane->IsKindOf(RUNTIME_CLASS(CPaneFrameWnd)))
+		{
+
+			::PostMessageA(pWnd->GetPane()->m_hWnd, WM_CLOSE, 0, 0);
+		}
+	}
+
+	//return CFrameWndEx::OnCloseMiniFrame(pWnd);
+
+	return TRUE;
+}
+
+void CMainFrame::RemovePathFromList(const CString strPath, CStringList* pList)
+{
+	POSITION pos = pList->Find(strPath);
+
+	if (pos != NULL)
+	{
+		pList->RemoveAt(pos);
+	}
+}
+
+void CMainFrame::RemoveViewFromList(CObject* pObject, CObList* pList)
+{
+	POSITION pos = pList->Find(pObject);
+
+	if (pos != NULL)
+	{
+		pList->RemoveAt(pos);
+	}
 }
 
 void CMainFrame::OnFileOpenimage()
@@ -540,20 +675,29 @@ void CMainFrame::AdjustFrmPaneLayout()
 		if (pObject->IsKindOf(RUNTIME_CLASS(CNeuronImageView)))
 		{
 			pImgView = (CNeuronImageView*)pObject;
-			pImgView->ShowPane(TRUE, FALSE, TRUE);
-			DockPane(pImgView);
+			if (pImgView->GetSafeHwnd())
+			{
+				pImgView->ShowPane(TRUE, FALSE, TRUE);
+				DockPane(pImgView);
+			}			
 		}
 		else if (pObject->IsKindOf(RUNTIME_CLASS(CNeuronGrayImgView)))
 		{
 			pGrayImgView = (CNeuronGrayImgView*)pObject;
-			pGrayImgView->ShowPane(TRUE, FALSE, TRUE);
-			DockPane(pGrayImgView);
+			if (pGrayImgView->GetSafeHwnd())
+			{
+				pGrayImgView->ShowPane(TRUE, FALSE, TRUE);
+				DockPane(pGrayImgView);
+			}			
 		}
 		else if (pObject->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
 		{
 			pBwImgView = (CNeuronBwImgView*)pObject;
-			pBwImgView->ShowPane(TRUE, FALSE, TRUE);
-			DockPane(pBwImgView);
+			if (pBwImgView->GetSafeHwnd())
+			{
+				pBwImgView->ShowPane(TRUE, FALSE, TRUE);
+				DockPane(pBwImgView);
+			}			
 		}
 	}
 
@@ -842,8 +986,8 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 	ofstream csvFile1,csvFile2;
 	csvFile1.open("clustering_coefficient.csv", ios::out | ios::trunc);
 	csvFile2.open("average_path_length.csv", ios::out | ios::trunc);
-
-	for (int k = 0; k <= iNeurons; k+=5 )
+	
+	for (int k = 10; k <= iNeurons*0.5; k+=10 )
 	{
 		if (k < 2)
 		{
@@ -851,8 +995,17 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 		}
 		else
 		{
-			for (double p = 0.0; p <= 1.001; p+=0.05)
+			double p = 0.0001;
+			while(p<1.0)
 			{
+				if (p < 0.1)
+				{
+					p = p * 10;
+				}
+				else
+				{
+					p = p + 0.1;
+				}
 				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, bMutualAnalysis,&pThis->m_wndTrainView);
 				pThis->m_net._caculate_sw_clustering_coefficient();
 				pThis->m_net._caculate_sw_average_path_length();
@@ -872,3 +1025,106 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 	
 	return 0;
 }
+
+void CMainFrame::OnEvaluationsSimilarityPK()
+{
+	// TODO: Add your command handler code here
+	iNumberOfTrainBwView = CheckBwImgViewNumber();
+
+	if (iNumberOfTrainBwView <= 0)
+	{
+		return;
+	}
+	m_hThread = CreateThread(NULL, 0,
+		(LPTHREAD_START_ROUTINE)EvaluateSimilarityOfPK,
+		this,
+		0,
+		&m_dwThreadID);
+
+	CloseHandle(m_hThread);
+	Sleep(0);
+
+}
+
+UINT WINAPI CMainFrame::EvaluateSimilarityOfPK(LPVOID pParam)
+{
+	CMainFrame* pThis = (CMainFrame*)pParam;
+	double** _patterns = (scalar**)malloc(sizeof(scalar*)*iNumberOfTrainBwView);
+	int iPatterns = 0;
+	int iNeurons = 0;
+	POSITION pos = pThis->m_viewList.GetHeadPosition();
+	CObject* pObject = NULL;
+	CNeuronBwImgView* pBwImgView = NULL;
+	bool bMutualAnalysis = false;
+
+	while (pos != NULL)
+	{
+		pObject = pThis->m_viewList.GetNext(pos);
+		if (pObject->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
+		{
+			pBwImgView = (CNeuronBwImgView*)pObject;
+			if (pBwImgView->IsWindowVisible())
+			{
+				Mat* pTempImg = pBwImgView->GetImage();
+				Mat Image = pTempImg->clone();
+				iNeurons = Image.cols * Image.rows;
+				cvtColor(Image, Image, CV_RGB2GRAY);
+				threshold(Image, Image, 170, 255, CV_THRESH_BINARY);
+
+				_patterns[iPatterns] = (scalar*)malloc(sizeof(scalar) * iNeurons);
+
+				for (int i = 0; i < Image.rows; i++)
+				{
+					for (int j = 0; j < Image.cols; j++)
+					{
+						uchar data = Image.at<uchar>(i, j);
+						if (data > 0)
+						{
+							_patterns[iPatterns][i*Image.cols + j] = 1;
+						}
+						else
+						{
+							_patterns[iPatterns][i*Image.rows + j] = 0;
+						}
+					}
+
+				}
+				iPatterns++;
+			}
+		}
+	}
+
+	ofstream csvFile, csvFile1, csvFile2;
+	csvFile.open("similarity_ev2.csv", ios::out | ios::trunc);
+	csvFile1.open("clustering_coefficient_ev2.csv", ios::out | ios::trunc);
+	csvFile2.open("average_path_length_ev2.csv", ios::out | ios::trunc);
+	for (int k = 10; k <= iNeurons *0.5; k += 10)
+	{
+		for (double p = 0.0; p <= 1.0000; p = p + 0.1)
+		{
+			for (int repeat = 0; repeat < 3; repeat++)
+			{
+				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, bMutualAnalysis, NULL);
+				pThis->m_net._train_smallworld_netwrok(1);//1 wat, 0 hebbian.
+				pThis->m_net._caculate_sw_clustering_coefficient();
+				pThis->m_net._caculate_sw_average_path_length();
+
+				csvFile << pThis->m_net._caculate_sw_similarity() << ',';
+				csvFile1 << pThis->m_net._get_sw_clustering_coefficient() << ',';
+				csvFile2 << pThis->m_net._get_sw_average_path_length() << ',';
+				
+				pThis->m_net._free_smallworld_network();
+			}
+		}
+		csvFile << endl;
+		csvFile1 << endl;
+		csvFile2 << endl;
+	}
+
+	csvFile.close();
+	csvFile1.close();
+	csvFile2.close();
+	return 0;
+}
+
+

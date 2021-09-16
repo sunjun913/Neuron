@@ -64,6 +64,6 @@ void CNeuronBwImgView::AdjustLayout()
 
 void CNeuronBwImgView::SetImagePath(const CString strImagePath)
 {
-	CString strTemp = strImagePath;
+	m_strImagePath = strImagePath;
 	m_ctrlStatic.PrepareImage(strImagePath, 2);
 }

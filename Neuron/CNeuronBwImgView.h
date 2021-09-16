@@ -17,11 +17,14 @@ public:
 	void SetImagePath(const CString strImagePath);
 	Mat* GetImage() { return m_ctrlStatic.GetImage(); };
 
+	CString GetImagePath() {
+		return m_strImagePath;	}
 protected:
 	DECLARE_DYNAMIC(CNeuronBwImgView)
 
 private:
 	CNeuronOpenCVImageCtrl    m_ctrlStatic;
+	CString                   m_strImagePath;
 
 protected:
 	DECLARE_MESSAGE_MAP()

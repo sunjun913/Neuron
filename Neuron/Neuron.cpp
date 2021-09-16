@@ -161,10 +161,12 @@ void CNeuronApp::PreLoadState()
 
 void CNeuronApp::LoadCustomState()
 {
+	this->m_bSaveState = FALSE;
 }
 
 void CNeuronApp::SaveCustomState()
 {
+	this->m_bSaveState = FALSE;
 }
 
 // CNeuronApp message handlers

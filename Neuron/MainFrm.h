@@ -7,7 +7,7 @@
 #include "CNeuronImageView.h"
 #include "CNeuronBwImgView.h"
 #include "CNeuronGrayImgView.h"
-#include "CNeuronHopfieldNetwrok.h"
+#include "CNeuronHopfieldNetwork.h"
 #include "CNeuronTrainView.h"
 #include "CNeuronRetrievalView.h"
 #include "CNeuronTrainConfView.h"
@@ -50,6 +50,8 @@ public:
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual BOOL OnCmdMsg(UINT nID, int nCode, void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo);
 	virtual BOOL LoadFrame(UINT nIDResource, DWORD dwDefaultStyle = WS_OVERLAPPEDWINDOW | FWS_ADDTOTITLE, CWnd* pParentWnd = nullptr, CCreateContext* pContext = nullptr);
+	virtual BOOL OnCloseDockingPane(CDockablePane* pWnd);
+	virtual BOOL OnCloseMiniFrame(CPaneFrameWnd* pWnd);
 
 // Implementation
 public:
@@ -68,7 +70,7 @@ protected:  // control bar embedded members
 	CNeuronTrainConfView  m_wndTrainConfView;
 	CNeuronRetrievalView  m_wndRetrievalView;
 
-	CNeuronHopfieldNetwrok   m_net;
+	CNeuronHopfieldNetwork   m_net;
 
 private:
 	int               m_iSetCvt2Gary;
@@ -94,7 +96,7 @@ protected:
 	int CheckBwImgViewNumber();
 	static UINT WINAPI TrainNetworkThread(LPVOID pParam);
 	static UINT WINAPI EvaluateProbabilityOfClusteringCoefficientAndAvgLength(LPVOID pParam);
-
+	static UINT WINAPI EvaluateSimilarityOfPK(LPVOID pParam);
 	uint32_t ReverseInt(uint32_t value){
 		value = ((value << 8) & 0xFF00FF00) | ((value >> 8) & 0xFF00FF);
 		return (value << 16) | (value >> 16);
@@ -102,6 +104,9 @@ protected:
 
 	bool CheckMnistFilesExit();
 	bool CheckMnistFileContents();
+
+	void RemovePathFromList(const CString strPath, CStringList* pList);
+	void RemoveViewFromList(CObject* pObject,CObList* pList);
 
 protected:
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -120,10 +125,12 @@ protected:
 	afx_msg void OnTrainStartretrieval();
 	afx_msg void OnTrain();
 	afx_msg void OnEvaluationPKcLen();
+	afx_msg void OnEvaluationsSimilarityPK();
 	afx_msg LRESULT OnTrainViewShow(WPARAM wParam, LPARAM lParam);
-	DECLARE_MESSAGE_MAP()
-		
 
+	DECLARE_MESSAGE_MAP()
+
+	
 };
 
 
