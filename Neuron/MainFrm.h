@@ -94,6 +94,7 @@ private:
 protected:
 	void AdjustFrmPaneLayout();
 	int CheckBwImgViewNumber();
+	bool CheckImageViewExist(const CString strFilePathname);
 	static UINT WINAPI TrainNetworkThread(LPVOID pParam);
 	static UINT WINAPI EvaluateProbabilityOfClusteringCoefficientAndAvgLength(LPVOID pParam);
 	static UINT WINAPI EvaluateSimilarityOfPK(LPVOID pParam);
@@ -130,7 +131,6 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 
-	
 };
 
 

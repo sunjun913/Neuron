@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "CNeuronTrainView.h"
 
+IMPLEMENT_DYNAMIC(CNeuronTrainView, CDockablePane)
 
 BEGIN_MESSAGE_MAP(CNeuronTrainView, CDockablePane)
 	ON_WM_CREATE()

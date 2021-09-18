@@ -293,6 +293,12 @@ BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pWnd)
 		RemoveViewFromList(pBwImgView, &m_viewList);
 	}
 
+	if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronRetrievalView)) || pWnd->IsKindOf(RUNTIME_CLASS(CNeuronTrainView))
+		|| pWnd->IsKindOf(RUNTIME_CLASS(CNeuronTrainConfView)))
+	{
+		pWnd->ShowPane(FALSE, FALSE, TRUE);
+		return TRUE;
+	}
 
 	if (pWnd->IsKindOf(RUNTIME_CLASS(CTabbedPane)))
 	{
@@ -327,29 +333,10 @@ BOOL CMainFrame::OnCloseDockingPane(CDockablePane* pWnd)
 BOOL CMainFrame::OnCloseMiniFrame(CPaneFrameWnd* pWnd)
 {
 	// TODO: Add your specialized code here and/or call the base class
-	
 	CNeuronImageView*   pImgView = NULL;
 	CNeuronGrayImgView* pGrayImgView = NULL;
 	CNeuronBwImgView*   pBwImgView = NULL;
 
-	if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronImageView)))
-	{
-		pImgView = (CNeuronImageView*)pWnd;
-		RemoveViewFromList(pImgView, &m_viewList);
-	}
-	else if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronGrayImgView)))
-	{
-		pGrayImgView = (CNeuronGrayImgView*)pWnd;
-		RemovePathFromList(pGrayImgView->GetImagePath(), &m_grayImgList);
-		RemoveViewFromList(pGrayImgView, &m_viewList);
-	}
-	else if (pWnd->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
-	{
-		pBwImgView = (CNeuronBwImgView*)pWnd;
-		RemovePathFromList(pBwImgView->GetImagePath(), &m_bwImgList);
-		RemoveViewFromList(pBwImgView, &m_viewList);
-	}
-	
 	CWnd* pwnd = pWnd->GetPane();
 	if (pwnd->IsKindOf(RUNTIME_CLASS(CTabbedPane)))
 	{
@@ -363,6 +350,31 @@ BOOL CMainFrame::OnCloseMiniFrame(CPaneFrameWnd* pWnd)
 			if (pBar != NULL)
 			{
 				ASSERT_VALID(pBar);
+
+				if (pBar->IsKindOf(RUNTIME_CLASS(CNeuronImageView)))
+				{
+					pImgView = (CNeuronImageView*)pBar;
+					RemoveViewFromList(pImgView, &m_viewList);
+				}
+				else if (pBar->IsKindOf(RUNTIME_CLASS(CNeuronGrayImgView)))
+				{
+					pGrayImgView = (CNeuronGrayImgView*)pBar;
+					RemovePathFromList(pGrayImgView->GetImagePath(), &m_grayImgList);
+					RemoveViewFromList(pGrayImgView, &m_viewList);
+				}
+				else if (pBar->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
+				{
+					pBwImgView = (CNeuronBwImgView*)pBar;
+					RemovePathFromList(pBwImgView->GetImagePath(), &m_bwImgList);
+					RemoveViewFromList(pBwImgView, &m_viewList);
+				}
+
+				if (pBar->IsKindOf(RUNTIME_CLASS(CNeuronRetrievalView)) || pBar->IsKindOf(RUNTIME_CLASS(CNeuronTrainView))
+					|| pBar->IsKindOf(RUNTIME_CLASS(CNeuronTrainConfView)))
+				{
+					continue;
+				}
+
 				::PostMessageA(pBar->m_hWnd, WM_CLOSE, 0, 0);
 			}
 		}
@@ -370,9 +382,32 @@ BOOL CMainFrame::OnCloseMiniFrame(CPaneFrameWnd* pWnd)
 	else
 	{
 		CDockablePane* pane = (CDockablePane *)pwnd;
+
 		if (pane->IsKindOf(RUNTIME_CLASS(CDockablePane)) || pane->IsKindOf(RUNTIME_CLASS(CPane)) && pane->IsKindOf(RUNTIME_CLASS(CPaneFrameWnd)))
 		{
+			if (pane->IsKindOf(RUNTIME_CLASS(CNeuronImageView)))
+			{
+				pImgView = (CNeuronImageView*)pane;
+				RemoveViewFromList(pImgView, &m_viewList);
+			}
+			else if (pane->IsKindOf(RUNTIME_CLASS(CNeuronGrayImgView)))
+			{
+				pGrayImgView = (CNeuronGrayImgView*)pane;
+				RemovePathFromList(pGrayImgView->GetImagePath(), &m_grayImgList);
+				RemoveViewFromList(pGrayImgView, &m_viewList);
+			}
+			else if (pane->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
+			{
+				pBwImgView = (CNeuronBwImgView*)pane;
+				RemovePathFromList(pBwImgView->GetImagePath(), &m_bwImgList);
+				RemoveViewFromList(pBwImgView, &m_viewList);
+			}
 
+			if (pane->IsKindOf(RUNTIME_CLASS(CNeuronRetrievalView)) || pane->IsKindOf(RUNTIME_CLASS(CNeuronTrainView))
+				|| pane->IsKindOf(RUNTIME_CLASS(CNeuronTrainConfView)))
+			{
+				return TRUE;
+			}
 			::PostMessageA(pWnd->GetPane()->m_hWnd, WM_CLOSE, 0, 0);
 		}
 	}
@@ -416,17 +451,44 @@ void CMainFrame::OnFileOpenimage()
 		while (pos != NULL)
 		{
 			strFilename = fileDlg.GetNextPathName(pos);
-			pImgView = new CNeuronImageView();
-			pImgView->Create(_T("Image view"), this, CRect(0, 0, 200, 400), TRUE, iNumImgView + ID_NEURON_IMAGE_VIEW, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_LEFT | CBRS_FLOAT_MULTI);
-			pImgView->EnableDocking(CBRS_ALIGN_ANY);
-			pImgView->SetImagePath(strFilename);
-			m_viewList.AddTail(pImgView);
-			pImgView->ShowPane(TRUE, FALSE, TRUE);
-			DockPane(pImgView);
-			iNumImgView++;
+			if (!CheckImageViewExist(strFilename))
+			{
+				pImgView = new CNeuronImageView();
+				pImgView->Create(_T("Image view"), this, CRect(0, 0, 200, 400), TRUE, iNumImgView + ID_NEURON_IMAGE_VIEW, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CBRS_LEFT | CBRS_FLOAT_MULTI);
+				pImgView->EnableDocking(CBRS_ALIGN_ANY);
+				pImgView->SetImagePath(strFilename);
+				m_viewList.AddTail(pImgView);
+				pImgView->ShowPane(TRUE, FALSE, TRUE);
+				DockPane(pImgView);
+				iNumImgView++;
+			}
 		}
 	}
 	AdjustFrmPaneLayout();
+}
+
+bool CMainFrame::CheckImageViewExist(const CString strFilePathname)
+{
+	bool bExist = false;
+
+	POSITION pos = m_viewList.GetHeadPosition();
+	CObject* pObject = NULL;
+	CNeuronImageView*   pImgView = NULL;
+
+	while (pos != NULL)
+	{
+		pObject = m_viewList.GetNext(pos);
+		if (pObject->IsKindOf(RUNTIME_CLASS(CNeuronImageView)))
+		{
+			pImgView = (CNeuronImageView*)pObject;
+			if (pImgView->GetImagePath() == strFilePathname)
+			{
+				return true;
+			}
+		}
+	}
+
+	return bExist;
 }
 
 void CMainFrame::OnFileOpenmnistdataset()
@@ -657,8 +719,8 @@ void CMainFrame::OnTrainStartretrieval()
 	
 	m_wndRetrievalView.SetRetrievalImage(pattern, m_nRows, m_nCols);
 	m_wndRetrievalView.ShowPane(TRUE, FALSE, TRUE);
-	DockPane(&m_wndTrainView);
-	
+
+	DockPane(&m_wndRetrievalView);
 }
 
 void CMainFrame::AdjustFrmPaneLayout()
@@ -793,7 +855,7 @@ UINT WINAPI CMainFrame::TrainNetworkThread(LPVOID pParam)
 	::PostMessage(pThis->GetSafeHwnd(), WM_TRAINVIEW_SHOW, (WPARAM)iNeurons, NULL);
 	::SendMessage(pThis->m_wndTrainConfView.GetSafeHwnd(), WM_TRAINCONFIGVIEW_PREPARE_DATA, NULL, NULL);
 	
-	bool bMutualAnalysis = pThis->m_wndTrainConfView.getMutualAnalysis();
+	bool bPreAnalysis = pThis->m_wndTrainConfView.getPreAnalysis();
 	int iWeightMethod = pThis->m_wndTrainConfView.getWeightMethod();
 	pThis->m_wndTrainView.SetTopology(pThis->m_wndTrainConfView.getTopology());
 
@@ -802,8 +864,11 @@ UINT WINAPI CMainFrame::TrainNetworkThread(LPVOID pParam)
 		double dRewireProbability = pThis->m_wndTrainConfView.getRewireProbability();
 		int iKneurons = pThis->m_wndTrainConfView.getKneuron();
 		pThis->m_wndTrainView.SetKneuron(pThis->m_wndTrainConfView.getKneuron());
-		pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView,iKneurons,dRewireProbability,bMutualAnalysis,&pThis->m_wndTrainView);
+		pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView,iKneurons,dRewireProbability, bPreAnalysis,&pThis->m_wndTrainView);
 		pThis->m_net._train_smallworld_netwrok(iWeightMethod);
+		double sim = pThis->m_net._caculate_sw_similarity();
+		/*CString str; str.Format(_T("%2f"), sim);
+		AfxMessageBox(str);*/
 	}
 	else
 	{
@@ -944,7 +1009,7 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 	POSITION pos = pThis->m_viewList.GetHeadPosition();
 	CObject* pObject = NULL;
 	CNeuronBwImgView* pBwImgView = NULL;
-	bool bMutualAnalysis = pThis->m_wndTrainConfView.getMutualAnalysis();
+	bool bPreAnalysis = pThis->m_wndTrainConfView.getPreAnalysis();
 
 	while (pos != NULL)
 	{
@@ -984,8 +1049,8 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 	}
 
 	ofstream csvFile1,csvFile2;
-	csvFile1.open("clustering_coefficient.csv", ios::out | ios::trunc);
-	csvFile2.open("average_path_length.csv", ios::out | ios::trunc);
+	csvFile1.open("clustering_coefficient_ev1.csv", ios::out | ios::trunc);
+	csvFile2.open("average_path_length.csv_ev1", ios::out | ios::trunc);
 	
 	for (int k = 10; k <= iNeurons*0.5; k+=10 )
 	{
@@ -1006,7 +1071,7 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 				{
 					p = p + 0.1;
 				}
-				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, bMutualAnalysis,&pThis->m_wndTrainView);
+				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, bPreAnalysis,&pThis->m_wndTrainView);
 				pThis->m_net._caculate_sw_clustering_coefficient();
 				pThis->m_net._caculate_sw_average_path_length();
 
@@ -1055,7 +1120,7 @@ UINT WINAPI CMainFrame::EvaluateSimilarityOfPK(LPVOID pParam)
 	POSITION pos = pThis->m_viewList.GetHeadPosition();
 	CObject* pObject = NULL;
 	CNeuronBwImgView* pBwImgView = NULL;
-	bool bMutualAnalysis = false;
+	bool bPreAnalysis = false;
 
 	while (pos != NULL)
 	{
@@ -1094,36 +1159,25 @@ UINT WINAPI CMainFrame::EvaluateSimilarityOfPK(LPVOID pParam)
 		}
 	}
 
-	ofstream csvFile, csvFile1, csvFile2;
+	ofstream csvFile;
 	csvFile.open("similarity_ev2.csv", ios::out | ios::trunc);
-	csvFile1.open("clustering_coefficient_ev2.csv", ios::out | ios::trunc);
-	csvFile2.open("average_path_length_ev2.csv", ios::out | ios::trunc);
-	for (int k = 10; k <= iNeurons *0.5; k += 10)
-	{
-		for (double p = 0.0; p <= 1.0000; p = p + 0.1)
-		{
-			for (int repeat = 0; repeat < 3; repeat++)
-			{
-				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, bMutualAnalysis, NULL);
-				pThis->m_net._train_smallworld_netwrok(1);//1 wat, 0 hebbian.
-				pThis->m_net._caculate_sw_clustering_coefficient();
-				pThis->m_net._caculate_sw_average_path_length();
 
-				csvFile << pThis->m_net._caculate_sw_similarity() << ',';
-				csvFile1 << pThis->m_net._get_sw_clustering_coefficient() << ',';
-				csvFile2 << pThis->m_net._get_sw_average_path_length() << ',';
+	for (int k = iNeurons; k > 4 ; k -= 4)
+	{
+		for (double p = 0.0; p <= 1.0000; p = p + 0.05)
+		{
+			pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, bPreAnalysis, NULL);
+			pThis->m_net._train_smallworld_netwrok(1);//1 wat, 0 hebbian.
+
+			csvFile << pThis->m_net._caculate_sw_similarity() << ',';
 				
-				pThis->m_net._free_smallworld_network();
-			}
+			pThis->m_net._free_smallworld_network();
 		}
 		csvFile << endl;
-		csvFile1 << endl;
-		csvFile2 << endl;
 	}
 
 	csvFile.close();
-	csvFile1.close();
-	csvFile2.close();
+
 	return 0;
 }
 

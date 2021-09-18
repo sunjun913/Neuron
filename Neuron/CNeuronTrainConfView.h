@@ -9,8 +9,8 @@ public:
 	CNeuronTrainConfView();
 	virtual ~CNeuronTrainConfView();
 
-	bool   getMutualAnalysis() {
-		return m_bMutualAnaylsis;}
+	bool   getPreAnalysis() {
+		return m_bPreAnaylsis;}
 	int    getTopology() {
 		return m_nConnection;}
 	double getRewireProbability() {
@@ -26,7 +26,7 @@ protected:
 	void InitPropGird();
 
 private:
-	bool   m_bMutualAnaylsis;
+	bool   m_bPreAnaylsis;
 	int    m_nConnection;
 	int    m_nWeightMethod;
 	double m_dRewireProbability;
@@ -34,6 +34,7 @@ private:
 	CMFCPropertyGridCtrl m_ctrlPropGird;
 
 public:
+	DECLARE_DYNAMIC(CNeuronTrainConfView)
 	DECLARE_MESSAGE_MAP()
 	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	afx_msg void OnSize(UINT nType, int cx, int cy);

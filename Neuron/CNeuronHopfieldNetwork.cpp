@@ -63,7 +63,7 @@ bool CNeuronHopfieldNetwork::_allocate_network(const int num_neurons, scalar** p
 	 
 }
 
-bool CNeuronHopfieldNetwork::_allocate_smallworld_network(const int num_neurons, scalar** patterns, const int num_patterns, const int k_neurons, double probability_rewire, const bool bMutualAnalysis, CWnd* pMsgInterface)
+bool CNeuronHopfieldNetwork::_allocate_smallworld_network(const int num_neurons, scalar** patterns, const int num_patterns, const int k_neurons, double probability_rewire, const bool bPreAnalysis, CWnd* pMsgInterface)
 {
 	_nTopology = 1;
 	_patterns = patterns;
@@ -87,11 +87,11 @@ bool CNeuronHopfieldNetwork::_allocate_smallworld_network(const int num_neurons,
 		_s_net.weights[p] = (scalar *)malloc(sizeof(scalar) * _s_net.k_neurons);
 	}
 
-	if (bMutualAnalysis == true)
+	if (bPreAnalysis == true)
 	{
 		_mi.p0_arr.RemoveAll();
 		_mi.p1_arr.RemoveAll();
-		_mutual_analysis(_patterns, _num_patterns);
+		_pre_analysis(_patterns, _num_patterns);
 	}
 
 	int val;
@@ -114,7 +114,7 @@ bool CNeuronHopfieldNetwork::_allocate_smallworld_network(const int num_neurons,
 			{
 				if (random_p <= _s_net.p_rewire)
 				{
-					if (bMutualAnalysis == false)
+					if (bPreAnalysis == false)
 					{
 						int rnd_neuron = cvRandInt(&rng) % _s_net.num_neurons;
 						while (rnd_neuron == val || rnd_neuron == i)
@@ -617,7 +617,7 @@ int CNeuronHopfieldNetwork::_find_wires_between_neigbours(CArray<int, int>* pArr
 	return wires;
 }
 
-void CNeuronHopfieldNetwork::_mutual_analysis(scalar** patterns, const int num_patterns)
+void CNeuronHopfieldNetwork::_pre_analysis(scalar** patterns, const int num_patterns)
 {
 	int x = 0;
 	int cnt_0 = 0, cnt_1 =0;
@@ -644,8 +644,7 @@ double CNeuronHopfieldNetwork::_caculate_sw_similarity()
 			sum++;
 		}
 	}
-
-	return (sum *1.0) / (_s_net.num_neurons *1.0);
+	return (sum * 1.0) / (_s_net.num_neurons * 1.0);
 }
 
 

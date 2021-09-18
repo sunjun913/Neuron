@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "CNeuronTrainConfView.h"
 
+IMPLEMENT_DYNAMIC(CNeuronTrainConfView, CDockablePane)
 
 BEGIN_MESSAGE_MAP(CNeuronTrainConfView, CDockablePane)
 	ON_WM_CREATE()
@@ -11,7 +12,7 @@ END_MESSAGE_MAP()
 
 CNeuronTrainConfView::CNeuronTrainConfView()
 {
-	m_bMutualAnaylsis = false;
+	m_bPreAnaylsis = false;
 	m_nConnection = 0;
 	m_nWeightMethod = 0;
 	m_dRewireProbability = 0.035;
@@ -72,7 +73,7 @@ void CNeuronTrainConfView::InitPropGird()
 	m_ctrlPropGird.MarkModifiedProperties();
 
 	CMFCPropertyGridProperty* pGroup1 = new CMFCPropertyGridProperty(_T("Pre-Analysis"));
-	pGroup1->AddSubItem(new CMFCPropertyGridProperty(_T("Mutual information analysis"), (_variant_t)false, _T("Specifies if the mutual information analysis is employed in your application.")));
+	pGroup1->AddSubItem(new CMFCPropertyGridProperty(_T("Information analysis"), (_variant_t)false, _T("Specifies if the information analysis is employed in your application.")));
 
 	CMFCPropertyGridProperty* pGroup2 = new CMFCPropertyGridProperty(_T("Topologies"));
 	
@@ -126,9 +127,9 @@ LRESULT CNeuronTrainConfView::OnPrepareConfigData(WPARAM wParam, LPARAM lParam)
 			CMFCPropertyGridProperty *pSubProperty = pProperty->GetSubItem(j);
 			CString strName = pSubProperty->GetName();
 			COleVariant var = pSubProperty->GetValue();
-			if (strName == _T("Mutual information analysis") && i==0)
+			if (strName == _T("Information analysis") && i==0)
 			{
-				m_bMutualAnaylsis = var.boolVal;
+				m_bPreAnaylsis = var.boolVal;
 			}
 			if (strName == _T("Small world parameters") && i == 1 && j == 1)
 			{

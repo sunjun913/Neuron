@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "CNeuronRetrievalView.h"
 
+IMPLEMENT_DYNAMIC(CNeuronRetrievalView, CDockablePane)
+
 BEGIN_MESSAGE_MAP(CNeuronRetrievalView, CDockablePane)
 	ON_WM_CREATE()
 	ON_WM_SIZE()
