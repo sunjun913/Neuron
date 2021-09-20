@@ -867,8 +867,8 @@ UINT WINAPI CMainFrame::TrainNetworkThread(LPVOID pParam)
 		pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView,iKneurons,dRewireProbability, bPreAnalysis,&pThis->m_wndTrainView);
 		pThis->m_net._train_smallworld_netwrok(iWeightMethod);
 		double sim = pThis->m_net._caculate_sw_similarity();
-		/*CString str; str.Format(_T("%2f"), sim);
-		AfxMessageBox(str);*/
+		CString str; str.Format(_T("%2f"), sim);
+		AfxMessageBox(str);
 	}
 	else
 	{
@@ -1164,7 +1164,7 @@ UINT WINAPI CMainFrame::EvaluateSimilarityOfPK(LPVOID pParam)
 
 	for (int k = iNeurons; k > 4 ; k -= 4)
 	{
-		for (double p = 0.0; p <= 1.0000; p = p + 0.05)
+		for (double p = 0.0; p < 1.0001; p = p + 0.05)
 		{
 			pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, bPreAnalysis, NULL);
 			pThis->m_net._train_smallworld_netwrok(1);//1 wat, 0 hebbian.

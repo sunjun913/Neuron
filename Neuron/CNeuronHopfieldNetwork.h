@@ -22,14 +22,9 @@ typedef struct smallworld_hopfield_net {
 	scalar** weights;	
 } smallworld_hopfield_net;
 
-typedef struct _information {
-	CArray<int, int> p0_arr;
-	CArray<int, int> p1_arr;	
-} _information;
 
 static hopfield_net _net;
 static smallworld_hopfield_net _s_net;
-static _information _mi;
 
 class CNeuronHopfieldNetwork
 {
@@ -67,9 +62,7 @@ public:
 	int _find_length(const int iNeuron, const int jNeuron);
 	bool _is_inf(int* lMatrix, const int jNeuron);
 	void _add2array(CArray<int, int>* pArray, const int val);
-
-	void _pre_analysis(scalar** patterns,const int num_patterns);
-
+	int _random_rewire_with_ksat(const int kNeuron,const int nNeuron, const int i,const int j);
 	double _caculate_sw_similarity();
 
 private:
