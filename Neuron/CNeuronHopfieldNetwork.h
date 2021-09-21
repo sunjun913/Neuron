@@ -62,7 +62,8 @@ public:
 	int _find_length(const int iNeuron, const int jNeuron);
 	bool _is_inf(int* lMatrix, const int jNeuron);
 	void _add2array(CArray<int, int>* pArray, const int val);
-	int _random_rewire_with_ksat(const int kNeuron,const int nNeuron, const int i,const int j);
+	int _random_rewire_with_p_analysis(const int kNeuron,const int nNeuron, const int i,const int j);
+	int _verify_local_bw_characteristic(const int iLow, const int iHigh);
 	double _caculate_sw_similarity();
 
 private:

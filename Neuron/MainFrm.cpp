@@ -1050,7 +1050,7 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 
 	ofstream csvFile1,csvFile2;
 	csvFile1.open("clustering_coefficient_ev1.csv", ios::out | ios::trunc);
-	csvFile2.open("average_path_length.csv_ev1", ios::out | ios::trunc);
+	csvFile2.open("average_path_length_ev1.csv", ios::out | ios::trunc);
 	
 	for (int k = 10; k <= iNeurons*0.5; k+=10 )
 	{
@@ -1120,7 +1120,7 @@ UINT WINAPI CMainFrame::EvaluateSimilarityOfPK(LPVOID pParam)
 	POSITION pos = pThis->m_viewList.GetHeadPosition();
 	CObject* pObject = NULL;
 	CNeuronBwImgView* pBwImgView = NULL;
-	bool bPreAnalysis = false;
+	bool bPreAnalysis = true;
 
 	while (pos != NULL)
 	{

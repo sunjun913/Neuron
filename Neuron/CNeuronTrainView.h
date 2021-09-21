@@ -14,7 +14,7 @@ public:
 		m_nTopology = nTopology;}
 	void AdjustLayout();
 	void SetRangeOfProgressBar(const int iNeuron) {
-		m_ctrlProgress.SetRange(0, iNeuron-1);
+		m_ctrlProgress.SetRange(0, iNeuron);
 	}
 	void SetKneuron(const int iKneurons) {
 		m_nKneurons = iKneurons;

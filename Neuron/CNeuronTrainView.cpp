@@ -73,6 +73,7 @@ void CNeuronTrainView::AdjustLayout()
 	
 }
 
+
 LRESULT CNeuronTrainView::OnTrainProgress(WPARAM wParam, LPARAM lParam)
 {
 	m_ctrlProgress.StepIt();
@@ -83,7 +84,6 @@ LRESULT CNeuronTrainView::OnTrainComplete(WPARAM wParam, LPARAM lParam)
 {
 	double** weights = (double**)wParam;
 	int     num = (int)lParam;
-
 	CString strTemp, strContent;
 
 	if (m_nTopology == 0)
