@@ -102,7 +102,7 @@ bool CNeuronHopfieldNetwork::_allocate_smallworld_network(const int num_neurons,
 			double random_p = cvRandReal(&rng);
 			
 			// rewire neuron node
-			if (j > (_s_net.k_neurons) *(0.5))
+			if (j >= (_s_net.k_neurons) *(0.5))
 			{
 				if (bPreAnalysis == false)
 				{
@@ -137,7 +137,7 @@ int CNeuronHopfieldNetwork::_random_rewire_with_p_analysis(const int kNeuron, co
 	int n = nNeuron;
 	int iIndex = i;
 	int jIndex = j;
-	int pos = (int)(j - (k * 0.5)-1);
+	int pos = (int)(j - (k * 0.5));
 
 	int low = (pos) * ((2*n)/k);
 	int high = (pos+1)*((2*n)/k);
@@ -167,9 +167,10 @@ int CNeuronHopfieldNetwork::_verify_local_bw_characteristic(const int iLow, cons
 	
 	 int p_w = cnt_w / cnt_total;
 	
+	 Sleep(0);
 	 CvRNG rng = cvRNG(cvGetTickCount());
 	 double p_random = cvRandReal(&rng);
-
+	 
 	 Sleep(0);
 	 rng = cvRNG(cvGetTickCount());
 	 int pos_neuron = 0, rnd_neuron = inf;
@@ -200,8 +201,10 @@ int CNeuronHopfieldNetwork::_verify_local_bw_characteristic(const int iLow, cons
 
 	 b_array.RemoveAll();
 	 w_array.RemoveAll();
-	 return rnd_neuron;
 
+	 b_array.FreeExtra();
+	 w_array.FreeExtra();
+	 return rnd_neuron;
 }
 
 void CNeuronHopfieldNetwork::_free_netwrok()
@@ -226,7 +229,7 @@ void CNeuronHopfieldNetwork::_free_smallworld_network()
 		return;
 	}
 
-	for (int x = 0; x < _s_net.k_neurons; x++)
+	for (int x = 0; x < _s_net.num_neurons; x++)
 	{
 		free(_s_net.links[x]);
 		free(_s_net.weights[x]);
@@ -242,6 +245,7 @@ void CNeuronHopfieldNetwork::_free_smallworld_network()
 	_s_net.p_rewire = 0.0;
 
 	_cur_pattern = NULL;
+	Sleep(0);
 }
 
 void CNeuronHopfieldNetwork::_update_weight(const UINT nMethod)
@@ -685,4 +689,26 @@ double CNeuronHopfieldNetwork::_caculate_sw_similarity()
 	return (sum * 1.0) / (_s_net.num_neurons * 1.0);
 }
 
+double CNeuronHopfieldNetwork::_caculate_fc_similarity()
+{
+	int sum = 0;
+	for (int i = 0; i < _net.num_neurons; i++)
+	{
+		if (_patterns[0][i] == _cur_pattern[i])
+		{
+			sum++;
+		}
+	}
+	return (sum * 1.0) / (_net.num_neurons * 1.0);
+}
 
+int CNeuronHopfieldNetwork::_get_links_val(const int i, const int j)
+{
+	return _s_net.links[i][j]; 
+}
+
+scalar CNeuronHopfieldNetwork::_get_neurons_val(const int i, const int j)
+{
+	int n = _s_net.links[i][j];
+	return  _patterns[0][n];
+}

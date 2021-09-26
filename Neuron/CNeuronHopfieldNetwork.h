@@ -65,6 +65,9 @@ public:
 	int _random_rewire_with_p_analysis(const int kNeuron,const int nNeuron, const int i,const int j);
 	int _verify_local_bw_characteristic(const int iLow, const int iHigh);
 	double _caculate_sw_similarity();
+	double _caculate_fc_similarity();
+	int _get_links_val(const int i, const int j);
+	scalar _get_neurons_val(const int i, const int j);
 
 private:
 	scalar**     _patterns;

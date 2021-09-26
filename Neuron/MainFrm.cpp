@@ -39,6 +39,9 @@ BEGIN_MESSAGE_MAP(CMainFrame, CFrameWndEx)
 	ON_MESSAGE(WM_TRAINVIEW_SHOW, &CMainFrame::OnTrainViewShow)
 	ON_COMMAND(ID_EVALUATION_P_KC_LEN, &CMainFrame::OnEvaluationPKcLen)
 	ON_COMMAND(ID_EVALUATIONS_SIMILARITY, &CMainFrame::OnEvaluationsSimilarityPK)
+	ON_COMMAND(ID_EVALUATIONS_EXPORTLINKSINFO, &CMainFrame::OnEvaluationsExportlinksinfo)
+	ON_COMMAND(ID_EVALUATIONS_LOGICINCONSISTENTENERGY, &CMainFrame::OnEvaluationsLogicinconsistentenergy)
+	ON_COMMAND(ID_EVALUATIONS_ACCURACYMNIST, &CMainFrame::OnEvaluationsAccuracymnist)
 END_MESSAGE_MAP()
 
 // CMainFrame construction/destruction
@@ -704,7 +707,7 @@ void CMainFrame::OnTrainStartstoring()
 		&m_dwThreadID);
 
 	CloseHandle(m_hThread);
-	Sleep(0);
+	Sleep(50);
 }
 
 void CMainFrame::OnTrainStartretrieval()
@@ -721,6 +724,7 @@ void CMainFrame::OnTrainStartretrieval()
 	m_wndRetrievalView.ShowPane(TRUE, FALSE, TRUE);
 
 	DockPane(&m_wndRetrievalView);
+
 }
 
 void CMainFrame::AdjustFrmPaneLayout()
@@ -1009,6 +1013,8 @@ UINT WINAPI CMainFrame::EvaluateProbabilityOfClusteringCoefficientAndAvgLength(L
 	POSITION pos = pThis->m_viewList.GetHeadPosition();
 	CObject* pObject = NULL;
 	CNeuronBwImgView* pBwImgView = NULL;
+	
+	::SendMessage(pThis->m_wndTrainConfView.GetSafeHwnd(), WM_TRAINCONFIGVIEW_PREPARE_DATA, NULL, NULL);
 	bool bPreAnalysis = pThis->m_wndTrainConfView.getPreAnalysis();
 
 	while (pos != NULL)
@@ -1181,4 +1187,313 @@ UINT WINAPI CMainFrame::EvaluateSimilarityOfPK(LPVOID pParam)
 	return 0;
 }
 
+void CMainFrame::OnEvaluationsExportlinksinfo()
+{
+	// TODO: Add your command handler code here
+	iNumberOfTrainBwView = CheckBwImgViewNumber();
 
+	if (iNumberOfTrainBwView <= 0)
+	{
+		return;
+	}
+	m_hThread = CreateThread(NULL, 0,
+		(LPTHREAD_START_ROUTINE)EvaluatExportLinks,
+		this,
+		0,
+		&m_dwThreadID);
+
+	CloseHandle(m_hThread);
+	Sleep(0);
+}
+
+UINT WINAPI CMainFrame::EvaluatExportLinks(LPVOID pParam)
+{
+	CMainFrame* pThis = (CMainFrame*)pParam;
+	double** _patterns = (scalar**)malloc(sizeof(scalar*)*iNumberOfTrainBwView);
+	int iPatterns = 0;
+	int iNeurons = 0;
+	POSITION pos = pThis->m_viewList.GetHeadPosition();
+	CObject* pObject = NULL;
+	CNeuronBwImgView* pBwImgView = NULL;
+	bool bPreAnalysis = true;
+
+	while (pos != NULL)
+	{
+		pObject = pThis->m_viewList.GetNext(pos);
+		if (pObject->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
+		{
+			pBwImgView = (CNeuronBwImgView*)pObject;
+			if (pBwImgView->IsWindowVisible())
+			{
+				Mat* pTempImg = pBwImgView->GetImage();
+				Mat Image = pTempImg->clone();
+				iNeurons = Image.cols * Image.rows;
+				cvtColor(Image, Image, CV_RGB2GRAY);
+				threshold(Image, Image, 170, 255, CV_THRESH_BINARY);
+
+				_patterns[iPatterns] = (scalar*)malloc(sizeof(scalar) * iNeurons);
+
+				for (int i = 0; i < Image.rows; i++)
+				{
+					for (int j = 0; j < Image.cols; j++)
+					{
+						uchar data = Image.at<uchar>(i, j);
+						if (data > 0)
+						{
+							_patterns[iPatterns][i*Image.cols + j] = 1;
+						}
+						else
+						{
+							_patterns[iPatterns][i*Image.rows + j] = 0;
+						}
+					}
+
+				}
+				iPatterns++;
+			}
+		}
+	}
+
+	ofstream csvFile,csvFile1,csvFile2;
+	csvFile.open("links_ev3.csv", ios::out | ios::trunc);
+	csvFile1.open("neurons_of_links_ev3.csv", ios::out | ios::trunc);
+	csvFile2.open("neurons_of_pattern_ev3.csv", ios::out | ios::trunc);
+
+	::SendMessage(pThis->m_wndTrainConfView.GetSafeHwnd(), WM_TRAINCONFIGVIEW_PREPARE_DATA, NULL, NULL);
+	double p = pThis->m_wndTrainConfView.getRewireProbability();
+	int k = pThis->m_wndTrainConfView.getKneuron();
+	pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, true, NULL);
+
+	for (int i = 0; i <iNeurons; i++)
+	{
+		for (int j = 0; j < k; j++)
+		{
+			csvFile << pThis->m_net._get_links_val(i, j) << ',';
+			csvFile1 << pThis->m_net._get_neurons_val(i, j) << ',';
+		}
+		csvFile << endl;
+		csvFile1 << endl;
+		csvFile2 << _patterns[0][i] << ',';
+	}
+	csvFile.close();
+	csvFile1.close();
+	csvFile2.close();
+
+	return 0;
+}
+
+void CMainFrame::OnEvaluationsLogicinconsistentenergy()
+{
+	// TODO: Add your command handler code here
+	iNumberOfTrainBwView = CheckBwImgViewNumber();
+
+	if (iNumberOfTrainBwView <= 0)
+	{
+		return;
+	}
+	m_hThread = CreateThread(NULL, 0,
+		(LPTHREAD_START_ROUTINE)EvaluatLogicInconsistentEnergy,
+		this,
+		0,
+		&m_dwThreadID);
+
+	CloseHandle(m_hThread);
+	Sleep(0);
+}
+
+UINT WINAPI CMainFrame::EvaluatLogicInconsistentEnergy(LPVOID pParam)
+{
+	CMainFrame* pThis = (CMainFrame*)pParam;
+	double** _patterns = (scalar**)malloc(sizeof(scalar*)*iNumberOfTrainBwView);
+	int iPatterns = 0;
+	int iNeurons = 0;
+	POSITION pos = pThis->m_viewList.GetHeadPosition();
+	CObject* pObject = NULL;
+	CNeuronBwImgView* pBwImgView = NULL;
+	bool bPreAnalysis = true;
+	double p = 0.40;
+	int neuron = 50;
+	
+	while (pos != NULL)
+	{
+		pObject = pThis->m_viewList.GetNext(pos);
+		if (pObject->IsKindOf(RUNTIME_CLASS(CNeuronBwImgView)))
+		{
+			pBwImgView = (CNeuronBwImgView*)pObject;
+			if (pBwImgView->IsWindowVisible())
+			{
+				Mat* pTempImg = pBwImgView->GetImage();
+				Mat Image = pTempImg->clone();
+				iNeurons = Image.cols * Image.rows;
+				cvtColor(Image, Image, CV_RGB2GRAY);
+				threshold(Image, Image, 170, 255, CV_THRESH_BINARY);
+
+				_patterns[iPatterns] = (scalar*)malloc(sizeof(scalar) * iNeurons);
+
+				for (int i = 0; i < Image.rows; i++)
+				{
+					for (int j = 0; j < Image.cols; j++)
+					{
+						uchar data = Image.at<uchar>(i, j);
+						if (data > 0)
+						{
+							_patterns[iPatterns][i*Image.cols + j] = 1;
+						}
+						else
+						{
+							_patterns[iPatterns][i*Image.rows + j] = 0;
+						}
+					}
+
+				}
+				iPatterns++;
+			}
+		}
+	}
+
+	ofstream csvFile;
+	csvFile.open("data_ev4.csv", ios::out | ios::trunc);
+
+	for (int k = 6; k <= iNeurons; k = k + 10)
+	{
+		for (int repeat = 12; repeat > 0; repeat--)
+		{
+			pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, iNumberOfTrainBwView, k, p, true, NULL);
+			pThis->m_net._train_smallworld_netwrok(1);//1 wat, 0 hebbian.
+			scalar* pattern = pThis->m_net._get_current_pattern();
+			csvFile << pattern[neuron] << ',';
+		}
+		csvFile << endl;
+	}
+
+	csvFile.close();
+	return 0;
+}
+
+void CMainFrame::OnEvaluationsAccuracymnist()
+{
+	// TODO: Add your command handler code here
+	m_hThread = CreateThread(NULL, 0,
+		(LPTHREAD_START_ROUTINE)EvaluatAccuracyMnist,
+		this,
+		0,
+		&m_dwThreadID);
+
+	CloseHandle(m_hThread);
+	Sleep(0);
+
+}
+
+UINT WINAPI CMainFrame::EvaluatAccuracyMnist(LPVOID pParam)
+{
+	CMainFrame* pThis = (CMainFrame*)pParam;
+	if (!pThis->CheckMnistFilesExit())
+	{
+		return 0;
+	}
+
+	double** _patterns = (scalar**)malloc(sizeof(scalar*)*1);
+	int iPatterns = 0;
+	int iNeurons = 0;
+	bool bPreAnalysis = true;
+
+	ifstream mnist_train_images(pThis->m_strMnistTrainImagesPath, ios::in | ios::binary);
+	ifstream mnist_train_labels(pThis->m_strMnistTrainLabelsPath, ios::in | ios::binary);
+	ifstream mnist_test_images(pThis->m_strMnistTestImagesPath, ios::in | ios::binary);
+	ifstream mnist_test_labels(pThis->m_strMnistTestLabelsPath, ios::in | ios::binary);
+
+	uint32_t magic;
+	uint32_t num_images;
+	uint32_t num_Labels;
+	uint32_t rows;
+	uint32_t cols;
+
+	if (pThis->CheckMnistFileContents())
+	{
+		mnist_train_images.read(reinterpret_cast<char*>(&magic), 4);
+		magic = pThis->ReverseInt(magic);
+		mnist_train_images.read(reinterpret_cast<char*>(&num_images), 4);
+		num_images = pThis->ReverseInt(num_images);
+		mnist_train_images.read(reinterpret_cast<char*>(&rows), 4);
+		rows = pThis->ReverseInt(rows);
+		mnist_train_images.read(reinterpret_cast<char*>(&cols), 4);
+		cols = pThis->ReverseInt(cols);
+
+		mnist_train_labels.read(reinterpret_cast<char*>(&num_Labels), 4);
+		num_Labels = pThis->ReverseInt(num_Labels);
+
+		iNeurons = rows * cols;
+		_patterns[0] = (scalar*)malloc(sizeof(scalar) * iNeurons);
+		char*  pixels = (char*)malloc(sizeof(char)*rows*cols);
+
+		ofstream csvFile, csvFile1, csvFile2, csvFile3;
+		csvFile.open("sw_wat_accuracy_mnist_ev5.csv", ios::out | ios::trunc);
+		csvFile1.open("sw_hb_accuracy_mnist_ev5.csv", ios::out | ios::trunc);
+		csvFile2.open("fc_wat_accuracy_mnist_ev5.csv", ios::out | ios::trunc);
+		csvFile3.open("fc_hb_accuracy_mnist_ev5.csv", ios::out | ios::trunc);
+
+		for (uint i = 0; i < num_images; i++)
+		{
+			mnist_train_images.read(pixels, rows * cols);
+			
+			for (uint x = 0; x < rows; x++)
+			{
+				for (uint y = 0; y < cols; y++)
+				{
+					if (pixels[x * cols + y] == 0)
+						_patterns[0][x * cols + y] = 0;
+					else
+						_patterns[0][x * cols + y] = 1;
+				}
+			}
+
+
+			for (int k = iNeurons; k > 6; k -= 50)
+			{
+				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, 1, 40, 0.1, true, NULL);
+				pThis->m_net._train_smallworld_netwrok(1);
+				csvFile << pThis->m_net._caculate_sw_similarity() << ',';
+				pThis->m_net._free_smallworld_network();
+
+				pThis->m_net._allocate_smallworld_network(iNeurons, _patterns, 1, 40, 0.1, true, NULL);
+				pThis->m_net._train_smallworld_netwrok(0);
+				csvFile1 << pThis->m_net._caculate_sw_similarity() << ',';
+				pThis->m_net._free_smallworld_network();
+			}		
+			csvFile << endl;
+			csvFile1 << endl;
+
+			for (int repeat = 5; repeat > 0; repeat--)
+			{
+				pThis->m_net._allocate_network(iNeurons, _patterns, 1, NULL);
+				pThis->m_net._train_network(1);
+				csvFile2 << pThis->m_net._caculate_fc_similarity() << ',';
+				pThis->m_net._free_netwrok();
+
+				pThis->m_net._allocate_network(iNeurons, _patterns, 1, NULL);
+				pThis->m_net._train_network(0);
+				csvFile3 << pThis->m_net._caculate_fc_similarity() << ',';
+				pThis->m_net._free_netwrok();
+			}
+			csvFile2 << endl;
+			csvFile3 << endl;
+
+			for (int n = 0; n < iNeurons; n++)
+			{
+				_patterns[0][n] = 0;
+				pixels[n] = 0;
+			}
+		}
+		csvFile.close();
+		csvFile1.close();
+		csvFile2.close();
+		csvFile3.close();
+	}
+
+	mnist_train_images.close();
+	mnist_train_labels.close();
+	mnist_test_images.close();
+	mnist_test_labels.close();
+
+	return 0;
+}

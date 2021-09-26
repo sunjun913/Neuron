@@ -98,6 +98,9 @@ protected:
 	static UINT WINAPI TrainNetworkThread(LPVOID pParam);
 	static UINT WINAPI EvaluateProbabilityOfClusteringCoefficientAndAvgLength(LPVOID pParam);
 	static UINT WINAPI EvaluateSimilarityOfPK(LPVOID pParam);
+	static UINT WINAPI EvaluatExportLinks(LPVOID pParam);
+	static UINT WINAPI EvaluatLogicInconsistentEnergy(LPVOID pParam);
+	static UINT WINAPI EvaluatAccuracyMnist(LPVOID pParam);
 	uint32_t ReverseInt(uint32_t value){
 		value = ((value << 8) & 0xFF00FF00) | ((value >> 8) & 0xFF00FF);
 		return (value << 16) | (value >> 16);
@@ -127,10 +130,13 @@ protected:
 	afx_msg void OnTrain();
 	afx_msg void OnEvaluationPKcLen();
 	afx_msg void OnEvaluationsSimilarityPK();
+	afx_msg void OnEvaluationsExportlinksinfo();
+	afx_msg void OnEvaluationsLogicinconsistentenergy();
+	afx_msg void OnEvaluationsAccuracymnist();
 	afx_msg LRESULT OnTrainViewShow(WPARAM wParam, LPARAM lParam);
-
+	
 	DECLARE_MESSAGE_MAP()
-
+	
 };
 
 
